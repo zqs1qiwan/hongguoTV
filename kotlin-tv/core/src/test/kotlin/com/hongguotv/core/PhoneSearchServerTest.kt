@@ -48,7 +48,7 @@ class PhoneSearchServerTest {
             request(server)
             val reply=request(server,"POST",URI(server.url).path+"/submit","query=%E5%BE%A1%E7%8B%90","Origin: null\r\n")
             assertTrue(reply.startsWith("HTTP/1.1 200"))
-            assertEquals("御狈",submitted)
+            assertEquals("御狐",submitted)
             val noOrigin=request(server,"POST",URI(server.url).path+"/submit","query=%E5%BE%A1%E7%8B%90")
             assertTrue(noOrigin.startsWith("HTTP/1.1 200"))
         }
