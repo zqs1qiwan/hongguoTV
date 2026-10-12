@@ -39,6 +39,20 @@ class PhoneSearchServerTest {
             assertFalse(submitted)
         }
     }
+    @Test fun `real browsers can submit after loading the form page`() {
+        // Chromium-derived browsers (Chrome/Safari/Firefox on phone & desktop) may send
+        // "Origin: null" or no Origin on a same-origin form POST; the session token already
+        // carries CSRF protection, so only explicitly cross-site origins are rejected.
+        var submitted:String?=null
+        PhoneSearchServer("127.0.0.1",{ submitted=it }).use { server ->
+            request(server)
+            val reply=request(server,"POST",URI(server.url).path+"/submit","query=%E5%BE%A1%E7%8B%90","Origin: null\r\n")
+            assertTrue(reply.startsWith("HTTP/1.1 200"))
+            assertEquals("御狈",submitted)
+            val noOrigin=request(server,"POST",URI(server.url).path+"/submit","query=%E5%BE%A1%E7%8B%90")
+            assertTrue(noOrigin.startsWith("HTTP/1.1 200"))
+        }
+    }
     @Test fun `invalid and oversized input does not consume the session`() {
         PhoneSearchServer("127.0.0.1",{}).use { server ->
             for(body in listOf("query=","query="+"x".repeat(81),"query=a&query=b","query=hello%0Aworld","query=%zz")) {
