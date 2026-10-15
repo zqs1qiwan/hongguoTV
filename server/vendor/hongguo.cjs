@@ -23,14 +23,14 @@ const crypto = require('node:crypto');
 const SITE = 'https://hongguoduanju.com';
 const VIDEO_API = 'https://api5-normal-sinfonlineb.fqnovel.com/novel/player/multi_video_model/v1/';
 const APP_SEARCH_API = 'https://api5-normal-sinfonlinea.fqnovel.com/reading/bookapi/search/tab/v';
-const VIDEO_UA = 'com.phoenix.read/71332 (Linux; U; Android 16; zh_CN; 25053RT47C; Build/BP2A.250605.031.A3; Cronet/TTNetVersion:04657795 2026-01-23 QuicVersion:c67e9834 2025-09-08)';
-const APP_UA = 'com.phoenix.read/72232 (Linux; U; Android 16; zh_CN; 25053RT47C; Build/BP2A.250605.031.A3)';
+const VIDEO_UA = 'com.phoenix.read/71532 (Linux; U; Android 9; SM-N9860; Build/PQ3A.190705.10241111;tt-ok/3.12.13.20)';
+const APP_UA = VIDEO_UA;
 const DEVICE = {
-    iid: '1905892595382586', device_id: '1905892595378490', ac: 'wifi', channel: 'update_64', aid: '8662', app_name: 'novelread',
-    version_code: '71332', version_name: '7.1.3.32', device_platform: 'android', os: 'android',
-    ssmix: 'a', device_type: '25053RT47C', device_brand: 'Redmi', language: 'zh', os_api: '36',
-    os_version: '16', manifest_version_code: '71332', resolution: '1280*2772', dpi: '520',
-    update_version_code: '71332', host_abi: 'arm64-v8a', dragon_device_type: 'phone', pv_player: '71332',
+    iid: '3788260546453235', device_id: '538083340353620', ac: 'wifi', channel: 'oppo_8662_64', aid: '8662', app_name: 'novelread',
+    version_code: '71532', version_name: '7.1.5.32', device_platform: 'android', os: 'android',
+    ssmix: 'a', device_type: 'SM-N9860', device_brand: 'Samsung', language: 'zh', os_api: '28',
+    os_version: '9', manifest_version_code: '71532', resolution: '900*1600', dpi: '320',
+    update_version_code: '71532', host_abi: 'arm64-v8a', dragon_device_type: 'pad', pv_player: '71532',
     compliance_status: '0', need_personal_recommend: '1', player_so_load: '1', is_android_pad_screen: '0',
 };
 const APP_DEVICE = {
