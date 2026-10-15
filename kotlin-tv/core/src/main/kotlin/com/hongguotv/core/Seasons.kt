@@ -18,6 +18,12 @@ object Seasons {
         return Info(trimmed, null)
     }
 
+    fun badge(title: String, countBadge: String): String {
+        if (countBadge.isBlank()) return countBadge
+        val season = parse(title).season ?: return countBadge
+        return "第${season}季 · $countBadge"
+    }
+
     private fun chineseNumber(text: String): Int? {
         val digits = mapOf('零' to 0, '一' to 1, '二' to 2, '两' to 2, '三' to 3, '四' to 4, '五' to 5, '六' to 6, '七' to 7, '八' to 8, '九' to 9)
         if (text == "十") return 10
