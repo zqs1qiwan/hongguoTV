@@ -48,7 +48,9 @@ class ContentRepository(val http: OkHttpClient = OkHttpClient.Builder().connectT
         val o=item.optJSONObject("video_data") ?: item
         val count=o.optInt("episode_cnt",o.optJSONObject("series_episode_info")?.optInt("episode_cnt",0) ?: 0)
         val tags=o.optJSONArray("tags") ?: o.optJSONArray("category_list") ?: JSONArray()
-        return Series(o.str("series_id"),o.str("series_name").ifEmpty { o.str("series_title").ifEmpty { item.str("name") } },cleanUrl(o.str("series_cover")),o.str("series_intro"),o.str("episode_right_text").ifEmpty { if(count>0) "全 ${count} 集" else "" },(0 until minOf(tags.length(),5)).joinToString(" · ") { tags.optJSONObject(it)?.str("name") ?: tags.optString(it) })
+        val title=o.str("series_name").ifEmpty { o.str("series_title").ifEmpty { item.str("name") } }
+        val badge=Seasons.badge(title,o.str("episode_right_text").ifEmpty { if(count>0) "全 $count 集" else "" })
+        return Series(o.str("series_id"),title,cleanUrl(o.str("series_cover")),o.str("series_intro"),badge,(0 until minOf(tags.length(),5)).joinToString(" · ") { tags.optJSONObject(it)?.str("name") ?: tags.optString(it) })
     }
     private fun valid(rows: List<Series>) = rows.filter { it.id.matches(Regex("[0-9]{1,30}")) && it.title.isNotBlank() }.distinctBy { it.id }
     fun comicRanking(page: Int = 1): CatalogPage {
@@ -110,7 +112,8 @@ class ContentRepository(val http: OkHttpClient = OkHttpClient.Builder().connectT
                 val id=video.str("series_id").ifEmpty { row.str("book_id").ifEmpty { row.str("search_result_id") } }
                 val title=row.optJSONObject("search_high_light")?.optJSONObject("title")?.str("text").orEmpty().ifEmpty { video.str("title").ifEmpty { row.str("cell_name") } }
                 val count=video.optInt("episode_cnt")
-                list+=Series(id,title,cleanUrl(video.str("cover").ifEmpty { video.str("cover_url") }),video.str("video_desc"),if(count>0) "全 $count 集" else video.str("rec_text"),video.str("sub_title"))
+                val cardTitle=title.ifEmpty { video.str("title").ifEmpty { row.str("cell_name") } }
+                list+=Series(id,cardTitle,cleanUrl(video.str("cover").ifEmpty { video.str("cover_url") }),video.str("video_desc"),Seasons.badge(cardTitle,if(count>0) "全 $count 集" else video.str("rec_text")),video.str("sub_title"))
             }
         }
         synchronized(searchCursors) {
@@ -126,6 +129,22 @@ class ContentRepository(val http: OkHttpClient = OkHttpClient.Builder().connectT
         val episodes=(0 until raw.length()).map { raw.getString(it) }
         if(episodes.isEmpty() || episodes.any { !it.matches(Regex("[0-9]{1,30}")) } || episodes.distinct().size!=episodes.size) throw IOException("分集数据异常")
         return Detail(card(o).copy(id=id),episodes)
+    }
+    // Seasons of one work: Hongguo publishes each season as an independent series, and
+    // no accessible API lists a work's seasons directly. Search the shared base title
+    // across both content tabs and keep entries whose parsed base title matches.
+    fun seasonsOf(series: Series): List<Series> {
+        val base=Seasons.parse(series.title).baseTitle
+        require(base.isNotBlank())
+        val found=linkedMapOf<String,Series>()
+        for(type in ContentType.entries) {
+            for(page in 1..3) {
+                val result=try { search(base,page,type) } catch(e: Exception) { if(e is SearchSessionExpiredException) throw e else break }
+                for(item in result.items) if(Seasons.parse(item.title).baseTitle==base && item.id!=series.id) found.putIfAbsent(item.id,item)
+                if(!result.hasMore) break
+            }
+        }
+        return (listOf(series)+found.values).sortedWith(compareBy({ Seasons.parse(it.title).season ?: 0 },{ it.id }))
     }
     fun stream(id: String, maxQuality: Int = 1080): StreamInfo {
         require(id.matches(Regex("[0-9]{1,30}")))

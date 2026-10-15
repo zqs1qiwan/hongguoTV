@@ -780,6 +780,14 @@ class MainActivity: Activity() {
             synopsisButton.text=if(synopsisExpanded) "收起简介" else "完整简介"
             synopsisButton.post { synopsisButton.requestRectangleOnScreen(android.graphics.Rect(0,0,synopsisButton.width,synopsisButton.height),false) }
         }
+        // Season picker: show when this title carries a season number, or when the
+        // current list already contains another season of the same work.
+        val currentSeason=Seasons.parse(data.series.title)
+        val siblingInCatalog=catalog.any { it.id!=data.series.id && Seasons.parse(it.title).baseTitle==currentSeason.baseTitle }
+        var seasonsButton: TextView?=null
+        if(currentSeason.season!=null || siblingInCatalog) {
+            seasonsButton=addButton(actions,"季列表") { seasonsButton?.let { showSeasonPicker(data.series,it) } }
+        }
         content.addView(hero)
         val groupRow=row(); groupRow.setPadding(0,dp(3),0,dp(5))
         val maxGroup=data.episodes.lastIndex/20; group=group.coerceIn(0,maxGroup)
@@ -798,6 +806,17 @@ class MainActivity: Activity() {
         }
         episodes.forEachIndexed { i,v -> v.nextFocusLeftId=if(i%10==0) v.id else episodes[i-1].id; v.nextFocusRightId=if(i%10==9 || i==episodes.lastIndex) v.id else episodes[i+1].id; if(i>=10) v.nextFocusUpId=episodes[i-10].id; v.nextFocusDownId=if(i+10<episodes.size) episodes[i+10].id else v.id }
         if(focusEpisode) episodes.getOrNull((episodeIndex-group*20).coerceIn(0,episodes.lastIndex))?.requestFocus() else play.requestFocus()
+    }
+    private fun showSeasonPicker(series: Series,anchor: View) {
+        work({ repository.seasonsOf(series) }, { list ->
+            if(list.size<2) { tvTools.info("季列表","该系列暂时只发现本季，其他季可能尚未上线。",anchor); return@work }
+            val info=Seasons.parse(series.title)
+            val labels=list.map { item ->
+                val season=Seasons.parse(item.title).season
+                (if(season!=null) "第${season}季" else item.title)+" · "+item.badge.ifBlank { "季信息暂缺" }
+            }
+            tvTools.choose("${info.baseTitle} · 共${list.size}季",labels,anchor,{ index -> catalogFocus=list[index].id; openDetail(list[index]) })
+        }, { problem -> tvTools.info("季列表","季列表加载失败：${problem.message ?: "网络异常"}",anchor) })
     }
     private fun playEpisode(index: Int,position: Long=0,autoplay: Boolean=true,recovering: Boolean=false) {
         updater.interrupt()
